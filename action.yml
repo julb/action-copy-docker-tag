@@ -1,0 +1,22 @@
+name: Copy / Push Docker tag
+description: "Create Docker tags from existing and push to Docker Hub"
+author: "julb"
+branding:
+  icon: copy
+  color: orange
+inputs:
+  username:
+    description: "The Docker username."
+    required: true
+  password:
+    description: "The Docker password."
+    required: true
+  from:
+    description: "The Docker tag to copy."
+    required: true
+  tags:
+    description: "The Docker tags to create and push."
+    required: true
+runs:
+  using: "docker"
+  image: "Dockerfile"
