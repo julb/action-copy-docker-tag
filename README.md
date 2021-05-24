@@ -13,7 +13,7 @@ It expects the following secrets:
 
 ### Example Workflow file
 
-- Copy and Push Docker tags:
+- Copy and Push Docker tags (inline):
 
 ```yaml
 jobs:
@@ -31,14 +31,48 @@ jobs:
             julb/some-image:new-version-2
 ```
 
+- Copy and Push Docker tags (from file):
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy and Push Docker tags
+        uses: julb/action-copy-docker-tag@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          from_file: build/copy-docker-tag-config.json
+```
+
+where `build/copy-docker-tag-config.json` content is:
+
+```json
+{
+  "julb/some-image:version": [
+    "julb/some-image:new-version-1",
+    "julb/some-image:new-version-2"
+  ],
+  "julb/some-image-2:version": [
+    "julb/some-image-2:new-version-1",
+    "julb/some-image-2:new-version-2"
+  ]
+}
+```
+
+The keys of the dictionary are expected to be the source images.
+The values of the dictionary are expected to be the tags to create for the respective source images.
+
 ### Inputs
 
-| Name       | Type     | Default   | Description                                                      |
-| ---------- | -------- | --------- | ---------------------------------------------------------------- |
-| `username` | string   | `Not set` | The DockerHub username. **Required**                             |
-| `password` | string   | `Not Set` | The DockerHub password. **Required**                             |
-| `from`     | string   | `Not set` | The Docker tag to copy. **Required**                             |
-| `tags`     | string[] | `Not Set` | The Docker tags to create from `from` tag and push. **Required** |
+| Name        | Type     | Default   | Description                                                                                                                       |
+| ----------- | -------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `username`  | string   | `Not set` | The DockerHub username. **Required**                                                                                              |
+| `password`  | string   | `Not Set` | The DockerHub password. **Required**                                                                                              |
+| `from`      | string   | `Not set` | The Docker tag to copy. **Required** if `from_file` is not set.                                                                   |
+| `tags`      | string[] | `Not Set` | The Docker tags to create from `from` tag and push. **Required** if `from_file` is not set.                                       |
+| `from_file` | filename | `Not set` | A JSON file which provides ability to configure multiple sources and destinations. **Required** if `from` and `tags` are not set. |
 
 **Important note**: DockerHub credentials contains sensitive values and should be provided using Github Action Secrets.
 Don't paste your DockerHub credentials in clear in your Github action.

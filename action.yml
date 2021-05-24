@@ -13,10 +13,13 @@ inputs:
     required: true
   from:
     description: "The Docker tag to copy."
-    required: true
+    required: false
   tags:
     description: "The Docker tags to create and push."
-    required: true
+    required: false
+  from-file:
+    description: "A configuration file for more advanced use cases such as copying multiple sources."
+    required: false
 runs:
   using: "docker"
   image: "Dockerfile"
