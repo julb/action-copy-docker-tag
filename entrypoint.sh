@@ -32,6 +32,10 @@ main() {
             # txt: copy as-is
             cp "${INPUT_FROM_FILE}" "${DEST_FILE}"
             ;;
+        *.properties)
+            # txt: copy as-is
+            cp "${INPUT_FROM_FILE}" "${DEST_FILE}"
+            ;;
         *.json)
             # json: get information from it using jq: key=src, value=tags[]
             jq -r 'to_entries[] | .key + "=" + (.value | join(","))' "${INPUT_FROM_FILE}" > "${DEST_FILE}"
@@ -49,9 +53,20 @@ main() {
 
     # Proceed to copy.
     while read -r LINE; do
-        # Get from
-        INPUT_FROM=$(echo "$LINE" | awk -F "=" '{print $1}')
-        INPUT_TAGS=$(echo "$LINE" | awk -F "=" '{print $2}')
+        # Skip if empty line
+        if [ -z "${LINE}" ]; then
+            continue
+        fi
+
+        # Skip if comment line
+        case "${LINE}" in
+            \#*)  continue ;;
+            *) true ;;
+        esac
+
+        # Get from line - remove any escape character
+        INPUT_FROM=$(echo "$LINE" | awk -F "=" '{print $1}' | sed 's/\\//g')
+        INPUT_TAGS=$(echo "$LINE" | awk -F "=" '{print $2}' | sed 's/\\//g')
 
         # Force pull source
         docker_pull_tag "${INPUT_FROM}"
