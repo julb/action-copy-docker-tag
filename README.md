@@ -43,7 +43,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          from_file: [some-file].[json|txt]
+          from_file: [some-file].[json|txt|properties]
 ```
 
 where `[some-file]` is:
@@ -66,7 +66,7 @@ where `[some-file]` is:
 The keys of the dictionary are expected to be the source images.
 The values of the dictionary are expected to be the tags to create for the respective source images.
 
-- Either a text file (filename should end with `.txt`):
+- Either a text file (filename should end with `.txt` or `.properties`):
 
 ```txt
 julb/some-image:version=julb/some-image:new-version-1,julb/some-image:new-version-2
