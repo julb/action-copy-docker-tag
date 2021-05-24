@@ -141,6 +141,11 @@ docker_push_tag() {
     DOCKER_TAG_SRC=$1
     DOCKER_TAG_DEST=$2
 
+    # Skip if identical
+    if [ "${DOCKER_TAG_SRC}" = "${DOCKER_TAG_DEST}" ]; then
+        return
+    fi
+
     # Copy tag
     echo "::debug::copy tag ${DOCKER_TAG_SRC} -> ${DOCKER_TAG_DEST}"
     if [ "$DRY_RUN" = false ]; then
