@@ -68,6 +68,11 @@ main() {
         INPUT_FROM=$(echo "$LINE" | awk -F "=" '{print $1}' | sed 's/\\//g')
         INPUT_TAGS=$(echo "$LINE" | awk -F "=" '{print $2}' | sed 's/\\//g')
 
+        # No target tags.
+        if [ -z "${INPUT_TAGS}" ]; then
+            continue
+        fi
+
         # Force pull source
         docker_pull_tag "${INPUT_FROM}"
 
