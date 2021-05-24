@@ -1,0 +1,10 @@
+{
+    "julb/some-image:version": [
+      "julb/some-image:new-version-1",
+      "julb/some-image:new-version-2"
+    ],
+    "julb/some-image-2:version": [
+      "julb/some-image-2:new-version-1",
+      "julb/some-image-2:new-version-2"
+    ]
+  }
