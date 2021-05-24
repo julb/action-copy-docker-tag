@@ -1,6 +1,8 @@
 #!/bin/sh
 
-set -e 
+set -e
+
+DRY_RUN="${DRY_RUN:-false}"
 
 main() {
     # Check commands
@@ -11,13 +13,45 @@ main() {
     check_input "${INPUT_USERNAME}" "username"
     check_input "${INPUT_PASSWORD}" "password"
 
+    # File to process.
+    DEST_FILE=/tmp/copy-docker-tag.txt
+
     # If no file provided, keep original method.
     if [ -z "${INPUT_FROM_FILE}" ]; then
         check_input "${INPUT_FROM}" "from"
         check_input "${INPUT_TAGS}" "tags"
 
-        # Login to docker
-        docker_login "${INPUT_USERNAME}" "${INPUT_PASSWORD}"
+        echo "${INPUT_FROM}=${INPUT_TAGS}" > "${DEST_FILE}"
+    else
+        # File provided - check existence
+        check_file_exists "${INPUT_FROM_FILE}" "from_file"
+
+        # If 
+        case ${INPUT_FROM_FILE} in
+        *.txt)
+            # txt: copy as-is
+            cp "${INPUT_FROM_FILE}" "${DEST_FILE}"
+            ;;
+        *.json)
+            # json: get information from it using jq: key=src, value=tags[]
+            jq -r 'to_entries[] | .key + "=" + (.value | join(","))' "${INPUT_FROM_FILE}" > "${DEST_FILE}"
+            ;; 
+        *)
+            # ??: unsupported
+            echo "File extension of ${INPUT_FROM_FILE} is not supported."
+            exit 2
+            ;;
+        esac
+    fi
+
+    # Login to docker
+    docker_login "${INPUT_USERNAME}" "${INPUT_PASSWORD}"
+
+    # Proceed to copy.
+    while read -r LINE; do
+        # Get from
+        INPUT_FROM=$(echo "$LINE" | awk -F "=" '{print $1}')
+        INPUT_TAGS=$(echo "$LINE" | awk -F "=" '{print $2}')
 
         # Force pull source
         docker_pull_tag "${INPUT_FROM}"
@@ -27,41 +61,13 @@ main() {
         for INPUT_TAG in $INPUT_TAG_ARRAY; do
             docker_push_tag "${INPUT_FROM}" "${INPUT_TAG}"
         done
-        
-        # Logout from docker
-        docker_logout
-    else
-        # File provided - check existence
-        check_file_exists "${INPUT_FROM_FILE}" "from_file"
+    done < "${DEST_FILE}"
 
-        # Extract information from it: key=src, value=tags[]
-        jq -r 'to_entries[] | .key + "|" + (.value | join(","))' "${INPUT_FROM_FILE}" > /tmp/jq.copy-docker-tag.txt
-
-        # Login to docker
-        docker_login "${INPUT_USERNAME}" "${INPUT_PASSWORD}"
-
-        # Proceed to copy.
-        while read -r LINE; do
-            # Get from
-            INPUT_FROM=$(echo "$LINE" | awk -F "|" '{print $1}')
-            INPUT_TAGS=$(echo "$LINE" | awk -F "|" '{print $2}')
-
-            # Force pull source
-            docker_pull_tag "${INPUT_FROM}"
-
-            # Copy tag
-            INPUT_TAG_ARRAY=$(echo "$INPUT_TAGS" | sed 's/,/ /g')
-            for INPUT_TAG in $INPUT_TAG_ARRAY; do
-                docker_push_tag "${INPUT_FROM}" "${INPUT_TAG}"
-            done
-        done < /tmp/jq.copy-docker-tag.txt
-
-        # Clean file
-        rm /tmp/jq.copy-docker-tag.txt
-        
-        # Logout from docker
-        docker_logout
-    fi
+    # Clean file
+    rm "${DEST_FILE}"
+    
+    # Logout from docker
+    docker_logout
 }
 
 check_cmd() {
@@ -94,7 +100,9 @@ docker_login() {
     echo "::debug::login to dockerhub -> ${DOCKER_REGISTRY_USER}"
 
     # Trigger login
-    echo "${DOCKER_REGISTRY_PASSWORD}" | docker login -u "${DOCKER_REGISTRY_USER}" --password-stdin
+    if [ "$DRY_RUN" = false ]; then
+        echo "${DOCKER_REGISTRY_PASSWORD}" | docker login -u "${DOCKER_REGISTRY_USER}" --password-stdin
+    fi
 }
 
 docker_pull_tag() {
@@ -103,7 +111,9 @@ docker_pull_tag() {
 
     # Debug
     echo "::debug::pull tag ${DOCKER_TAG}"
-    docker pull "${DOCKER_TAG}"
+    if [ "$DRY_RUN" = false ]; then
+        docker pull "${DOCKER_TAG}"
+    fi
 }
 
 docker_push_tag() {
@@ -113,16 +123,22 @@ docker_push_tag() {
 
     # Copy tag
     echo "::debug::copy tag ${DOCKER_TAG_SRC} -> ${DOCKER_TAG_DEST}"
-    docker tag "${DOCKER_TAG_SRC}" "${DOCKER_TAG_DEST}"
+    if [ "$DRY_RUN" = false ]; then
+        docker tag "${DOCKER_TAG_SRC}" "${DOCKER_TAG_DEST}"
+    fi
 
     # Push tag
     echo "::debug::push tag ${DOCKER_TAG_DEST}"
-    docker push "${DOCKER_TAG_DEST}"
+    if [ "$DRY_RUN" = false ]; then
+        docker push "${DOCKER_TAG_DEST}"
+    fi
 }
 
 docker_logout() {
     echo "::debug::logout from docker"
-    docker logout
+    if [ "$DRY_RUN" = false ]; then
+        docker logout
+    fi
 }
 
 main

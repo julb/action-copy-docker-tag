@@ -43,10 +43,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          from_file: build/copy-docker-tag-config.json
+          from_file: [some-file].[json|txt]
 ```
 
-where `build/copy-docker-tag-config.json` content is:
+where `[some-file]` is:
+
+- Either a JSON file (filename should end with `.json`):
 
 ```json
 {
@@ -64,15 +66,24 @@ where `build/copy-docker-tag-config.json` content is:
 The keys of the dictionary are expected to be the source images.
 The values of the dictionary are expected to be the tags to create for the respective source images.
 
+- Either a text file (filename should end with `.txt`):
+
+```txt
+julb/some-image:version=julb/some-image:new-version-1,julb/some-image:new-version-2
+julb/some-image-2:version=julb/some-image-2:new-version-1,julb/some-image-2:new-version-2
+```
+
+Other file extensions are not supported.
+
 ### Inputs
 
-| Name        | Type     | Default   | Description                                                                                                                       |
-| ----------- | -------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `username`  | string   | `Not set` | The DockerHub username. **Required**                                                                                              |
-| `password`  | string   | `Not Set` | The DockerHub password. **Required**                                                                                              |
-| `from`      | string   | `Not set` | The Docker tag to copy. **Required** if `from_file` is not set.                                                                   |
-| `tags`      | string[] | `Not Set` | The Docker tags to create from `from` tag and push. **Required** if `from_file` is not set.                                       |
-| `from_file` | filename | `Not set` | A JSON file which provides ability to configure multiple sources and destinations. **Required** if `from` and `tags` are not set. |
+| Name        | Type     | Default   | Description                                                                                                                  |
+| ----------- | -------- | --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `username`  | string   | `Not set` | The DockerHub username. **Required**                                                                                         |
+| `password`  | string   | `Not Set` | The DockerHub password. **Required**                                                                                         |
+| `from`      | string   | `Not set` | The Docker tag to copy. **Required** if `from_file` is not set.                                                              |
+| `tags`      | string[] | `Not Set` | The Docker tags to create from `from` tag and push. **Required** if `from_file` is not set.                                  |
+| `from_file` | filename | `Not set` | A file which provides ability to configure multiple sources and destinations. **Required** if `from` and `tags` are not set. |
 
 **Important note**: DockerHub credentials contains sensitive values and should be provided using Github Action Secrets.
 Don't paste your DockerHub credentials in clear in your Github action.
